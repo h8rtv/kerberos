@@ -1,14 +1,17 @@
+import { Client } from './actors';
 import { encrypt, generateNonce } from './crypto';
-import { read } from './db';
+import { M1 } from './messages';
 
 // Message 1
-function authRequestMessage(clientId: string, serverId: string, clientKey: Buffer) {
+export function authenticationRequestMessage(client: Client): M1 {
     const N1 = generateNonce();
-    const TR = '60'; // segundos
-    const encryptedPart = encrypt(serverId + TR + N1, clientKey);
-    const M1 = clientId + encryptedPart.encryptedData + encryptedPart.iv;
-    return M1;
+    const requestTime = '60'; // segundos
+    const dataToEncrypt = client.tgs.id + requestTime + N1.toString('base64');
+    const encryptedPart = encrypt(dataToEncrypt, Buffer.from(client.secret, 'base64'));
+    return {
+        clientId: client.id,
+        encryptedData: encryptedPart,
+    };
 }
 
-const client = await read('client');
-console.log(client);
+// Message 3
