@@ -1,6 +1,6 @@
 import { Actor } from "./actors";
 
-export async function read(actor: string): Promise<Actor> {
+export async function read<T>(actor: string): Promise<T> {
     const file = Bun.file(`data/${actor}.json`);
     const actorData = await file.json();
     return actorData;
