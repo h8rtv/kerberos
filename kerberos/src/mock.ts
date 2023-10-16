@@ -25,7 +25,7 @@ export function mockActors() {
     const client: Client = {
         ...clientService,
         as: authenticationActor,
-        tgs: authenticationActor,
+        tgs: ticketGrantingActor,
     };
 
     const greetingService: Service = {
