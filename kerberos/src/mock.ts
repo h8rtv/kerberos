@@ -22,16 +22,21 @@ export function mockActors() {
         secret: generateSecret().toString('base64'),
     };
 
+    const greetingServiceActor: Actor = {
+        name: 'greetingService',
+        id: generateId(),
+        ip: 'localhost:6669',
+    };
+
     const client: Client = {
         ...clientService,
         as: authenticationActor,
         tgs: ticketGrantingActor,
+        greeting: greetingServiceActor,
     };
 
     const greetingService: Service = {
-        name: 'greetingService',
-        id: generateId(),
-        ip: 'localhost:6669',
+        ...greetingServiceActor,
         secret: generateSecret().toString('base64'),
     };
 

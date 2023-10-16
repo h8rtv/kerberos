@@ -9,3 +9,5 @@ export type M2 = {
     ticketTgs: EncryptData,
     encryptedData: EncryptData,
 };
+
+export type M3 = M2;

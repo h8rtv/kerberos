@@ -25,6 +25,7 @@ export type Service = Actor & {
 export type Client = Service & {
     as: Actor,
     tgs: Actor,
+    greeting: Actor,
 };
 
 export type AuthenticationService = Actor & {

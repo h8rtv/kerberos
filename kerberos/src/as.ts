@@ -3,7 +3,7 @@ import { M1, M2 } from "./messages";
 import { encrypt, decrypt, generateSecret } from "./crypto";
 
 // Message 2
-export function authenticationGrantMessage(as: AuthenticationService, m1: M1): M2 {
+export function authenticationResponseMessage(as: AuthenticationService, m1: M1): M2 {
     const client = as.clients.find(client => client.id == m1.clientId);
     if (!client) {
         throw new Error('Client not found');
@@ -13,7 +13,6 @@ export function authenticationGrantMessage(as: AuthenticationService, m1: M1): M
 
     const receivedServiceId = decryptedText.substring(0, 36);
 
-    console.log(receivedServiceId, as.tgs.id);
     if (receivedServiceId != as.tgs.id) {
         throw new Error('TGS not found');
     }
