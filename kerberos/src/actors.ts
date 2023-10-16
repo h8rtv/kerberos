@@ -28,11 +28,11 @@ export type Client = Service & {
 };
 
 export type AuthenticationService = Actor & {
-    clients?: Service[],
+    clients: Service[],
     tgs: Service,
 };
 
 export type TicketGrantingService = Service & {
-    services?: Service[],
+    services: Service[],
 };
 
