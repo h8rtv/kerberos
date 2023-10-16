@@ -7,5 +7,12 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "client": "bun run src/client.ts",
+    "as": "bun run src/as.ts",
+    "tgs": "bun run src/tgs.ts",
+    "greeting": "bun run src/greeting.ts",
+    "mock": "bun run src/mock.ts"
   }
 }

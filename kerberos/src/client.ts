@@ -1,10 +1,5 @@
-import { encrypt, generateId, generateNonce, generateSecret } from './utils';
-
-const ID_C = generateId();
-const ID_AS = generateId();
-
-const Kc = generateSecret();
-
+import { encrypt, generateNonce } from './crypto';
+import { read } from './db';
 
 // Message 1
 function authRequestMessage(clientId: string, serverId: string, clientKey: Buffer) {
@@ -15,6 +10,5 @@ function authRequestMessage(clientId: string, serverId: string, clientKey: Buffe
     return M1;
 }
 
-const M1 = authRequestMessage(ID_C, ID_AS, Kc);
-console.log(M1);
-
+const client = await read('client');
+console.log(client);
