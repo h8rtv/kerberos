@@ -11,3 +11,4 @@ export type M2 = {
 };
 
 export type M3 = M2;
+export type M4 = M3;
