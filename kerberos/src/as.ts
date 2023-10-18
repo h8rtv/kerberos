@@ -1,6 +1,6 @@
 import { AuthenticationService } from "./actors";
 import { M1, M2 } from "./messages";
-import { encrypt, decrypt, generateSecret } from "./crypto";
+import { encrypt, decrypt, generateSecret, idToBuffer, getDateFromBufferTimestamp } from "./crypto";
 
 // Message 2
 export function authenticationResponseMessage(as: AuthenticationService, m1: M1): M2 {
@@ -9,25 +9,29 @@ export function authenticationResponseMessage(as: AuthenticationService, m1: M1)
         throw new Error('Client not found');
     }
     const clientSecret = Buffer.from(client.secret, 'base64');
-    const decryptedText = decrypt(m1.encryptedData, clientSecret);
+    const decrypted = decrypt(m1.encryptedData, clientSecret);
 
-    const receivedServiceId = decryptedText.substring(0, 36);
+    const receivedServiceId = decrypted.slice(0, 16);
 
-    if (receivedServiceId != as.tgs.id) {
+    if (receivedServiceId != idToBuffer(as.tgs.id)) {
         throw new Error('TGS not found');
     }
 
     const tgsSecret = Buffer.from(as.tgs.secret, 'base64');
 
-    const receivedRequestedTime = decryptedText.substring(36, 38);
-    const N1 = decryptedText.substring(38);
 
-    const tgsClientKey = generateSecret().toString('base64');
+    const receivedRequestedTime = decrypted.slice(16, 24);
+    // TODO: Check if receivedRequestTime is within the time limit (5 min)
+    const _receivedRequestedTimeDate = getDateFromBufferTimestamp(receivedRequestedTime);
 
-    const ticketDataToEncrypt = client.id + receivedRequestedTime + tgsClientKey;
+    const N1 = decrypted.slice(24);
+
+    const tgsClientKey = generateSecret();
+
+    const ticketDataToEncrypt = Buffer.concat([client.id, receivedRequestedTime, tgsClientKey]);
     const ticketTgs = encrypt(ticketDataToEncrypt, tgsSecret);
 
-    const dataToEncrypt = tgsClientKey + N1;
+    const dataToEncrypt = Buffer.concat([tgsClientKey, N1]);
     const encryptedData = encrypt(dataToEncrypt, clientSecret);
 
     return {

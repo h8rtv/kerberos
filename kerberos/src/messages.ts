@@ -1,7 +1,7 @@
 import { EncryptData } from "./crypto";
 
 export type M1 = {
-    clientId: string,
+    clientId: Buffer,
     encryptedData: EncryptData,
 };
 

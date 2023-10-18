@@ -4,18 +4,16 @@ import { encrypt, decrypt } from "./crypto";
 
 // Message 6
 export function serviceResponseMessage(service: Service, m5: M5): M6 {
-    const serviceSecret = Buffer.from(service.secret, 'base64');
-    const decryptedTicket = decrypt(m5.ticketService, serviceSecret);
+    const decryptedTicket = decrypt(m5.ticketService, Buffer.from(service.secret, 'base64'));
 
-    const clientIdFromTicket = decryptedTicket.substring(0, 36);
-    const authorizedTimeFromTicket = decryptedTicket.substring(36, 38);
-    const clientServiceKeyTicket = decryptedTicket.substring(38);
+    const clientIdFromTicket = decryptedTicket.slice(0, 16);
+    const authorizedTimeFromTicket = decryptedTicket.slice(16, 24);
+    const clientServiceKey = decryptedTicket.slice(24);
 
-    const clientServiceKey = Buffer.from(clientServiceKeyTicket, 'base64');
     const decryptedData = decrypt(m5.encryptedData, clientServiceKey);
 
-    const clientIdFromM5 = decryptedData.substring(0, 36);
-    const authorizedTimeFromM5 = decryptedData.substring(36, 38);
+    const clientIdFromM5 = decryptedData.slice(0, 16);
+    const authorizedTimeFromM5 = decryptedData.slice(16, 24);
 
     if (clientIdFromTicket != clientIdFromM5) {
         throw new Error('Ticket client id is different from M5 client id');
@@ -25,9 +23,9 @@ export function serviceResponseMessage(service: Service, m5: M5): M6 {
         throw new Error('Ticket requested time is different from M5 requested time');
     }
 
-    const N3 = decryptedData.substring(38);
+    const N3 = decryptedData.slice(24);
 
-    const dataToEncrypt = 'Resposta' + N3;
+    const dataToEncrypt = Buffer.from('Resposta') + N3;
     const encryptedData = encrypt(dataToEncrypt, clientServiceKey);
 
     return {
