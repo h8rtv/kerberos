@@ -11,4 +11,14 @@ export type M2 = {
 };
 
 export type M3 = M2;
-export type M4 = M3;
+
+export type M4 = {
+    ticketService: EncryptData,
+    encryptedData: EncryptData,
+};
+
+export type M5 = M4;
+
+export type M6 = {
+    encryptedData: EncryptData,
+};

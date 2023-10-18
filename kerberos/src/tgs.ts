@@ -3,36 +3,49 @@ import { M3, M4 } from "./messages";
 import { encrypt, decrypt, generateSecret } from "./crypto";
 
 // Message 4
-export function authenticationResponseMessage(tgs: TicketGrantingService, m3: M3) {
-    m3.
-    const client = as.clients.find(client => client.id == m1.clientId);
-    if (!client) {
-        throw new Error('Client not found');
+export function accessGrantResponseMessage(tgs: TicketGrantingService, m3: M3): M4 {
+    const tgsSecret = Buffer.from(tgs.secret, 'base64');
+    const decryptedTicket = decrypt(m3.ticketTgs, tgsSecret);
+
+    const clientIdFromTicket = decryptedTicket.substring(0, 36);
+    const requestedTimeFromTicket = decryptedTicket.substring(36, 38);
+    const tgsClientKeyTicket = decryptedTicket.substring(38);
+
+    const tgsClientKey = Buffer.from(tgsClientKeyTicket, 'base64');
+    const decryptedData = decrypt(m3.encryptedData, tgsClientKey);
+
+    const clientIdFromM3 = decryptedData.substring(0, 36);
+    const serviceIdFromM3 = decryptedData.substring(36, 72);
+    const requestedTimeFromM3 = decryptedData.substring(72, 74);
+    const N2 = decryptedData.substring(74);
+
+    if (clientIdFromTicket != clientIdFromM3) {
+        throw new Error('Ticket client id is different from M3 client id');
     }
-    const clientSecret = Buffer.from(client.secret, 'base64');
-    const decryptedText = decrypt(m1.encryptedData, clientSecret);
 
-    const receivedServiceId = decryptedText.substring(0, 36);
-
-    if (receivedServiceId != as.tgs.id) {
-        throw new Error('TGS not found');
+    if (requestedTimeFromTicket != requestedTimeFromM3) {
+        throw new Error('Ticket requested time is different from M3 requested time');
     }
 
-    const tgsSecret = Buffer.from(as.tgs.secret, 'base64');
+    const service = tgs.services.find(service => service.id == serviceIdFromM3);
+    if (!service) {
+        throw new Error('Service not found');
+    }
+    const serviceSecret = Buffer.from(service.secret, 'base64');
 
-    const receivedRequestedTime = decryptedText.substring(36, 38);
-    const N1 = decryptedText.substring(38);
+    // TODO: Check if user has permission to consume the service
 
-    const tgsClientKey = generateSecret().toString('base64');
+    const clientServiceKey = generateSecret().toString('base64');
 
-    const ticketDataToEncrypt = client.id + receivedRequestedTime + tgsClientKey;
-    const ticketTgs = encrypt(ticketDataToEncrypt, tgsSecret);
+    // TODO: receivedRequestTime != authorizedTime
+    const ticketDataToEncrypt = clientIdFromM3 + requestedTimeFromM3 + clientServiceKey;
+    const ticketService = encrypt(ticketDataToEncrypt, serviceSecret);
 
-    const dataToEncrypt = tgsClientKey + N1;
-    const encryptedData = encrypt(dataToEncrypt, clientSecret);
+    const dataToEncrypt = clientServiceKey + requestedTimeFromM3 + N2;
+    const encryptedData = encrypt(dataToEncrypt, tgsClientKey);
 
     return {
         encryptedData,
-        ticketTgs,
+        ticketService,
     };
 }

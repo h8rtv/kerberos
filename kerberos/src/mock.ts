@@ -2,6 +2,23 @@ import { Actor, AuthenticationService, Client, Service, TicketGrantingService } 
 import { generateId, generateSecret } from "./crypto";
 import { write } from './db';
 
+function asActor(actor: Actor) {
+    return {
+        id: actor.id,
+        ip: actor.ip,
+        name: actor.name,
+    };
+}
+
+function asService(service: Service) {
+    return {
+        id: service.id,
+        ip: service.ip,
+        name: service.name,
+        secret: service.secret,
+    };
+}
+
 export function mockActors() {
     const authenticationActor: Actor = {
         name: 'authenticationService',
@@ -9,10 +26,11 @@ export function mockActors() {
         ip: 'localhost:6666',
     };
 
-    const ticketGrantingActor: Actor = {
+    const ticketGrantingService: Service = {
         name: 'ticketGrantingService',
         id: generateId(),
         ip: 'localhost:6667',
+        secret: generateSecret().toString('base64'),
     };
 
     const clientService: Service = {
@@ -22,27 +40,18 @@ export function mockActors() {
         secret: generateSecret().toString('base64'),
     };
 
-    const greetingServiceActor: Actor = {
+    const greetingService: Service = {
         name: 'greetingService',
         id: generateId(),
         ip: 'localhost:6669',
+        secret: generateSecret().toString('base64'),
     };
 
     const client: Client = {
         ...clientService,
         as: authenticationActor,
-        tgs: ticketGrantingActor,
-        greeting: greetingServiceActor,
-    };
-
-    const greetingService: Service = {
-        ...greetingServiceActor,
-        secret: generateSecret().toString('base64'),
-    };
-
-    const ticketGrantingService: Service = {
-        ...ticketGrantingActor,
-        secret: generateSecret().toString('base64'),
+        tgs: asActor(ticketGrantingService),
+        greeting: asActor(greetingService),
     };
 
     const authenticationServiceWithClients: AuthenticationService = {
@@ -53,7 +62,6 @@ export function mockActors() {
 
     const ticketGrantingServiceWithServices: TicketGrantingService = {
         ...ticketGrantingService,
-        secret: generateSecret().toString('base64'),
         services: [greetingService],
     };
 
