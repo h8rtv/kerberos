@@ -10,15 +10,6 @@ function asActor(actor: Actor) {
     };
 }
 
-function asService(service: Service) {
-    return {
-        id: service.id,
-        ip: service.ip,
-        name: service.name,
-        secret: service.secret,
-    };
-}
-
 export function mockActors() {
     const authenticationActor: Actor = {
         name: 'authenticationService',
@@ -72,7 +63,6 @@ export function mockActors() {
         authenticationServiceWithClients,
     ];
 }
-
 
 const actors = mockActors();
 

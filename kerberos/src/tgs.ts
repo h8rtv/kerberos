@@ -6,26 +6,26 @@ import { encrypt, decrypt, generateSecret, idToBuffer } from "./crypto";
 export function accessGrantResponseMessage(tgs: TicketGrantingService, m3: M3): M4 {
     const decryptedTicket = decrypt(m3.ticketTgs, Buffer.from(tgs.secret, 'base64'));
 
-    const clientIdFromTicket = decryptedTicket.slice(0, 16);
-    const requestedTimeFromTicket = decryptedTicket.slice(16, 24);
-    const tgsClientKey = decryptedTicket.slice(24);
+    const clientIdFromTicket = decryptedTicket.subarray(0, 16);
+    const requestedTimeFromTicket = decryptedTicket.subarray(16, 24);
+    const tgsClientKey = decryptedTicket.subarray(24);
 
     const decryptedData = decrypt(m3.encryptedData, tgsClientKey);
 
-    const clientIdFromM3 = decryptedData.slice(0, 16);
-    const serviceIdFromM3 = decryptedData.slice(16, 32);
-    const requestedTimeFromM3 = decryptedData.slice(32, 40);
-    const N2 = decryptedData.slice(40);
+    const clientIdFromM3 = decryptedData.subarray(0, 16);
+    const serviceIdFromM3 = decryptedData.subarray(16, 32);
+    const requestedTimeFromM3 = decryptedData.subarray(32, 40);
+    const N2 = decryptedData.subarray(40);
 
-    if (clientIdFromTicket != clientIdFromM3) {
+    if (!clientIdFromTicket.equals(clientIdFromM3)) {
         throw new Error('Ticket client id is different from M3 client id');
     }
 
-    if (requestedTimeFromTicket != requestedTimeFromM3) {
+    if (!requestedTimeFromTicket.equals(requestedTimeFromM3)) {
         throw new Error('Ticket requested time is different from M3 requested time');
     }
 
-    const service = tgs.services.find(service => idToBuffer(service.id) == serviceIdFromM3);
+    const service = tgs.services.find(service => serviceIdFromM3.equals(idToBuffer(service.id)));
     if (!service) {
         throw new Error('Service not found');
     }

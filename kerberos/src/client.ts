@@ -20,13 +20,14 @@ export function authenticationRequestMessage(client: Client): [State, M1] {
 // Message 3
 export function accessGrantRequestMessage(client: Client, state: State, m2: M2): [State, M3] {
     const decrypted = decrypt(m2.encryptedData, Buffer.from(client.secret, 'base64'));
+    Bun.password.verify
 
-    const receivedN1 = decrypted.slice(32);
-    if (receivedN1 != state.N1) {
+    const receivedN1 = decrypted.subarray(32);
+    if (!receivedN1.equals(state.N1)) {
         throw new Error('Nonce 1 is incorrect');
     }
 
-    const tgsClientKey = decrypted.slice(0, 32);
+    const tgsClientKey = decrypted.subarray(0, 32);
     const N2 = generateNonce();
 
     const dataToEncrypt = Buffer.concat([
@@ -45,21 +46,21 @@ export function accessGrantRequestMessage(client: Client, state: State, m2: M2):
 
 // Message 5
 export function serviceRequestMessage(client: Client, state: State, m4: M4): [State, M5] {
-    const decrypted = decrypt(m4.encryptedData, Buffer.from(state.tgsClientKey, 'base64'));
+    const decrypted = decrypt(m4.encryptedData, state.tgsClientKey);
 
-    const receivedN2 = decrypted.slice(40);
-    if (receivedN2 != state.N2) {
+    const receivedN2 = decrypted.subarray(40);
+    if (!receivedN2.equals(state.N2)) {
         throw new Error('Nonce 2 is incorrect');
     }
 
-    const clientServiceKey = decrypted.slice(0, 32);
-    const authorizedTime = decrypted.slice(32, 40);
+    const clientServiceKey = decrypted.subarray(0, 32);
+    const authorizedTime = decrypted.subarray(32, 40);
 
     const N3 = generateNonce();
 
     // TODO: Adicionar serviço solicitado
     // TODO: Checar tempo
-    const dataToEncrypt = Buffer.concat([client.id, authorizedTime, N3]);
+    const dataToEncrypt = Buffer.concat([idToBuffer(client.id), authorizedTime, N3]);
     const encryptedData = encrypt(dataToEncrypt, clientServiceKey);
 
     return [{ N3, clientServiceKey }, {
@@ -70,12 +71,12 @@ export function serviceRequestMessage(client: Client, state: State, m4: M4): [St
 
 // End
 export function serviceResult(_: Client, state: State, m6: M6) {
-    const decrypted = decrypt(m6.encryptedData, Buffer.from(state.clientServiceKey, 'base64'));
+    const decrypted = decrypt(m6.encryptedData, state.clientServiceKey);
 
-    const response = decrypted.slice(0, 8);
-    const receivedN3 = decrypted.slice(8);
+    const response = decrypted.subarray(0, 8);
+    const receivedN3 = decrypted.subarray(8);
 
-    if (receivedN3 != state.N3) {
+    if (!receivedN3.equals(state.N3)) {
         throw new Error('Nonce 3 is incorrect');
     }
 
