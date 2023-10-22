@@ -1,60 +1,77 @@
-import { Actor, AuthenticationService, Client, Service, TicketGrantingService } from "./actors";
-import { generateId, generateSecret } from "./crypto";
-import { write } from './db';
+import { ActorWithSecret, AuthenticationService, Client, ClientServicesData, Service, ServiceWithSecret, TicketGrantingService } from "./types/actors";
+import { generateSecret, hash } from "./utils/crypto";
+import { write, writeFile } from './utils/db';
 
-function asActor(actor: Actor) {
+function asService(service: Service): Service {
     return {
-        id: actor.id,
-        ip: actor.ip,
-        name: actor.name,
+        hostname: service.hostname,
+        port: service.port,
+        name: service.name,
     };
 }
 
-export function mockActors() {
-    const authenticationActor: Actor = {
+function asActorWithSecret(actor: ActorWithSecret): ActorWithSecret {
+    return {
+        name: actor.name,
+        secret: actor.secret,
+    };
+}
+
+export function mockActors(createBaseClient: boolean = true): [Client | ClientServicesData, ServiceWithSecret, TicketGrantingService, AuthenticationService] {
+    const authenticationService: Service = {
         name: 'authenticationService',
-        id: generateId(),
-        ip: 'localhost:6666',
+        hostname: 'localhost',
+        port: 6666,
     };
 
-    const ticketGrantingService: Service = {
+    const ticketGrantingService: ServiceWithSecret = {
         name: 'ticketGrantingService',
-        id: generateId(),
-        ip: 'localhost:6667',
+        hostname: 'localhost',
+        port: 6667,
         secret: generateSecret().toString('base64'),
     };
 
-    const clientService: Service = {
-        name: 'client',
-        id: generateId(),
-        ip: 'localhost:6668',
-        secret: generateSecret().toString('base64'),
-    };
-
-    const greetingService: Service = {
+    const greetingService: ServiceWithSecret = {
         name: 'greetingService',
-        id: generateId(),
-        ip: 'localhost:6669',
+        hostname: 'localhost',
+        port: 6668,
         secret: generateSecret().toString('base64'),
     };
 
-    const client: Client = {
-        ...clientService,
-        as: authenticationActor,
-        tgs: asActor(ticketGrantingService),
-        greeting: asActor(greetingService),
+    const client: Client | ClientServicesData = {
+        services: {
+            as: authenticationService,
+            tgs: asService(ticketGrantingService),
+            greeting: asService(greetingService),
+        },
     };
 
     const authenticationServiceWithClients: AuthenticationService = {
-        ...authenticationActor,
-        clients: [clientService],
-        tgs: ticketGrantingService,
+        ...authenticationService,
+        expirationSeconds: 10,
+        clients: [],
+        services: {
+            tgs: asActorWithSecret(ticketGrantingService),
+        },
     };
 
     const ticketGrantingServiceWithServices: TicketGrantingService = {
         ...ticketGrantingService,
-        services: [greetingService],
+        expirationSeconds: 10,
+        services: [{
+            ...asActorWithSecret(greetingService),
+            capabilityList: {},
+        }],
     };
+
+    if (createBaseClient) {
+        Object.assign(client, {
+            name: 'client',
+            secret: hash('client_placeholder_password'),
+        });
+        authenticationServiceWithClients.clients.push(client as Client);
+        ticketGrantingServiceWithServices.services[0].capabilityList[(client as Client).name] = true;
+    }
 
     return [
         client,
@@ -64,7 +81,10 @@ export function mockActors() {
     ];
 }
 
-const actors = mockActors();
-
-await Promise.all(actors.map(write));
+if (import.meta.main) {
+    const actors = mockActors(false);
+    const [client, ...services] = actors;
+    await Promise.all(services.map(write));
+    await writeFile('client', client);
+}
 
