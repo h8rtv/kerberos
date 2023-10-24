@@ -111,7 +111,7 @@ async function run() {
                 Object.assign(service.capabilityList, {
                     [username]: true,
                 });
-                write(tgs);
+                await write(tgs);
                 console.log(`Serviço ${servicename} liberado para usuário ${username}`);
                 break;
         };

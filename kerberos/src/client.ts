@@ -1,6 +1,6 @@
 import { Client, ClientServicesData, Service } from './types/actors';
 import { encrypt, decrypt, generateNonce } from "./utils/crypto";
-import { nameToBuffer, nowAsBuffer, readUserFromStdin } from "./utils/helpers";
+import { nameToBuffer, nowAsBuffer, readSaltFromStdin, readUserFromStdin } from "./utils/helpers";
 import { M1, M2, M3, M4, M5, M6 } from './types/messages';
 import {
     m1toBuffer,
@@ -10,7 +10,7 @@ import {
     m4orM5toBuffer,
     parseM6,
 } from './messages';
-import { read } from './utils/db';
+import { read, writeFile } from './utils/db';
 
 type State = { [key: string]: Buffer }
 
@@ -123,7 +123,15 @@ function delay(ms: number) {
 async function run() {
     try {
         const serviceData = await read<ClientServicesData>('client');
-        const credentials = await readUserFromStdin();
+
+        if (!serviceData.salt) {
+            const salt = await readSaltFromStdin();
+            serviceData.salt = salt;
+            await writeFile('client', serviceData);
+        }
+
+        const salt = Buffer.from(serviceData.salt, 'base64');
+        const credentials = await readUserFromStdin(salt);
         const client: Client = Object.assign({}, credentials, serviceData);
 
         console.log('M1: build message');

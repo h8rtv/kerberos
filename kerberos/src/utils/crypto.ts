@@ -6,8 +6,11 @@ export function generateNonce(): Buffer {
     return crypto.randomBytes(16);
 }
 
-export function hash(password: string) {
-    const hasher = new Bun.CryptoHasher('sha512');
+export function hash(password: string, salt?: Buffer) {
+    const hasher = salt
+        ? crypto.createHmac('sha256', salt)
+        : crypto.createHash('sha256');
+
     hasher.update(password);
     const array = hasher.digest();
     return Buffer.from(array.buffer.slice(0, 32)).toString('base64');

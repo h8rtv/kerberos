@@ -1,6 +1,6 @@
 import { AuthenticationService } from "./types/actors";
 import { M1, M2 } from "./types/messages";
-import { encrypt, decrypt, generateSecret } from "./utils/crypto";
+import { encrypt, decrypt, generateSecret, generateNonce } from "./utils/crypto";
 import { nameToBuffer, getOffsetTimestamp, readUserFromStdin } from "./utils/helpers";
 import { read, write } from "./utils/db";
 import { m2orM3toBuffer, parseM1, errorMessage } from "./messages";
@@ -85,10 +85,12 @@ async function run() {
     for await (const line of console) {
         switch (line) {
             case '1':
-                const credentials = await readUserFromStdin();
+                const salt = generateNonce();
+                const credentials = await readUserFromStdin(salt);
                 as.clients.push(credentials);
-                write(as);
+                await write(as);
                 console.log(`Usuário ${credentials.name} criado`);
+                console.log(`O salt gerado é ${salt.toString('base64')}`);
                 break;
         };
     }

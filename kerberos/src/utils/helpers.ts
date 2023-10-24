@@ -2,7 +2,7 @@ import { stdin, stdout } from 'process';
 import { createInterface } from 'readline/promises';
 import { hash } from './crypto';
 
-export async function readUserFromStdin() {
+export async function readUserFromStdin(salt?: Buffer) {
     const readline = createInterface({ input: stdin, output: stdout });
 
     const username = await readline.question('Username: ');
@@ -11,8 +11,17 @@ export async function readUserFromStdin() {
     readline.close();
     return {
         name: username,
-        secret: hash(password),
+        secret: hash(password, salt),
     }
+}
+
+export async function readSaltFromStdin() {
+    const readline = createInterface({ input: stdin, output: stdout });
+
+    const salt = await readline.question('Salt: ');
+
+    readline.close();
+    return salt;
 }
 
 export async function readServiceUserFromStdin() {

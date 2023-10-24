@@ -24,6 +24,7 @@ export type ClientServicesData = {
         tgs: Service,
         greeting: Service,
     },
+    salt?: string,
 };
 export type Client = ActorWithSecret & ClientServicesData;
 
